@@ -363,6 +363,17 @@ NavYatra AI features a premium **obsidian-dark theme** with **cyan and emerald a
 
 ---
 
+## 🚀 Future Roadmap
+
+NavYatra AI is continuously evolving. Here’s what we’re working on:
+
+*   **Production API Migration**: Currently using the **Amadeus & Geoapify Sandbox** environments. We will soon shift to **Production Services** to provide live, real-time booking data and global availability.
+*   **Booking System Integration (MCP)**: Integrating the **Model Context Protocol (MCP)** to enable direct flight and hotel booking capabilities within the AI interface.
+*   **Latency Optimization**: Implementing **Parallel Agent Execution** to reduce total planning time from minutes to seconds.
+*   **Mobile App**: Expanding NavYatra AI to a dedicated mobile experience for on-the-go travel assistance.
+
+---
+
 ## 🤝 Contributing
 
 1. Fork the repository
