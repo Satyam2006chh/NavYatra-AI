@@ -1,4 +1,6 @@
 <div align="center">
+  
+![NavYatra AI Showcase](assets/showcase.png)
 
 # 🧭 NavYatra AI
 
@@ -327,6 +329,24 @@ The system includes built-in rate limit handling:
 - **Exponential backoff** retries on 429/413 errors
 - **Agent delays** between sequential calls to respect free-tier TPM limits
 - **Output truncation** to keep token usage within limits
+
+---
+
+## 🌟 Realistic Use Cases
+
+NavYatra AI is designed for real-world travel scenarios where complexity, speed, and personalization matter. Let's look at how it transforms the travel experience:
+
+### 1. The Family Vacationer 👨‍👩‍👧‍👦
+*   **Use Case**: Planning a long-awaited trip to Kyoto and Bali with specific needs for family-friendly retreats.
+*   **NavYatra Solution**: As shown in the **Showcase Image**, NavYatra generates a multi-destination itinerary that balances cultural exploration in Kyoto with tropical relaxation in Bali.
+
+### 2. The Busy Professional 💼
+*   **Use Case**: Needs to commute between major hubs for meetings with zero time to research.
+*   **NavYatra Solution**: High-speed transit and optimal flight paths are calculated by the **Flight Agent**, providing flight numbers and exact timings instantly.
+
+### 3. The Solo Adventurer ⛰️
+*   **Use Case**: Looking for hidden gems and authentic local food spots.
+*   **NavYatra Solution**: The **Research Agent** digs deep into local culture to recommend hidden temples and local street food guides.
 
 ---
 
