@@ -1,16 +1,15 @@
 """
 LangGraph Workflow — NavYatra AI
-Defines the multi-agent graph with SQLite checkpointer for persistence.
+Defines the multi-agent graph with parallel execution and SQLite checkpointer.
 
 Graph Flow:
-  START → coordinator → flight_agent → hotel_agent → weather_agent → research_agent → itinerary_agent → END
+  START → coordinator → [flight, hotel, weather, research] (parallel) → itinerary → END
 """
 
 import os
 import sys
 import sqlite3
 import uuid
-import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -37,12 +36,8 @@ except ImportError:
 
 
 # ============================================================
-# GRAPH NODES
+# GRAPH NODES — No delays! Cerebras has 1M TPD.
 # ============================================================
-
-# Delay between agent LLM calls to stay within Groq free-tier TPM limits
-AGENT_DELAY_SECONDS = 12
-
 
 def coordinator_node(state: TravelPlanState) -> dict:
     """Node 1: Parse user query into structured travel data."""
@@ -53,10 +48,8 @@ def coordinator_node(state: TravelPlanState) -> dict:
 
 
 def flight_node(state: TravelPlanState) -> dict:
-    """Node 2: Search and analyze flights."""
-    print(f"\n⏳ Waiting {AGENT_DELAY_SECONDS}s for rate limit cooldown...")
-    time.sleep(AGENT_DELAY_SECONDS)
-    print("✈️ [Flight Agent] Searching flights...")
+    """Node 2: Search and analyze flights (runs in parallel)."""
+    print("✈️  [Flight Agent] Searching flights...")
     p = state["parsed_input"]
 
     result = run_flight_agent(
@@ -69,9 +62,7 @@ def flight_node(state: TravelPlanState) -> dict:
 
 
 def hotel_node(state: TravelPlanState) -> dict:
-    """Node 3: Search and analyze hotels."""
-    print(f"\n⏳ Waiting {AGENT_DELAY_SECONDS}s for rate limit cooldown...")
-    time.sleep(AGENT_DELAY_SECONDS)
+    """Node 3: Search and analyze hotels (runs in parallel)."""
     print("🏨 [Hotel Agent] Searching hotels...")
     p = state["parsed_input"]
 
@@ -88,10 +79,8 @@ def hotel_node(state: TravelPlanState) -> dict:
 
 
 def weather_node(state: TravelPlanState) -> dict:
-    """Node 4: Analyze weather conditions."""
-    print(f"\n⏳ Waiting {AGENT_DELAY_SECONDS}s for rate limit cooldown...")
-    time.sleep(AGENT_DELAY_SECONDS)
-    print("🌤️ [Weather Agent] Checking weather...")
+    """Node 4: Analyze weather conditions (runs in parallel)."""
+    print("🌤️  [Weather Agent] Checking weather...")
     p = state["parsed_input"]
 
     result = run_weather_agent(
@@ -104,9 +93,7 @@ def weather_node(state: TravelPlanState) -> dict:
 
 
 def research_node(state: TravelPlanState) -> dict:
-    """Node 5: Research attractions and local tips."""
-    print(f"\n⏳ Waiting {AGENT_DELAY_SECONDS}s for rate limit cooldown...")
-    time.sleep(AGENT_DELAY_SECONDS)
+    """Node 5: Research attractions and local tips (runs in parallel)."""
     print("🎯 [Research Agent] Researching destination...")
     p = state["parsed_input"]
 
@@ -124,8 +111,6 @@ def research_node(state: TravelPlanState) -> dict:
 
 def itinerary_node(state: TravelPlanState) -> dict:
     """Node 6: Synthesize everything into a final travel plan."""
-    print(f"\n⏳ Waiting {AGENT_DELAY_SECONDS}s for rate limit cooldown...")
-    time.sleep(AGENT_DELAY_SECONDS)
     print("📋 [Itinerary Agent] Generating final travel plan...")
     p = state["parsed_input"]
 
@@ -142,11 +127,11 @@ def itinerary_node(state: TravelPlanState) -> dict:
 
 
 # ============================================================
-# BUILD THE GRAPH
+# BUILD THE GRAPH — Parallel fan-out for 4 middle agents
 # ============================================================
 
 def build_graph():
-    """Build and compile the LangGraph workflow."""
+    """Build and compile the LangGraph workflow with parallel execution."""
     builder = StateGraph(TravelPlanState)
 
     builder.add_node("coordinator", coordinator_node)
@@ -156,12 +141,21 @@ def build_graph():
     builder.add_node("research_agent", research_node)
     builder.add_node("itinerary_agent", itinerary_node)
 
+    # Coordinator runs first
     builder.add_edge(START, "coordinator")
+
+    # Fan-out: coordinator → all 4 agents run in PARALLEL
     builder.add_edge("coordinator", "flight_agent")
-    builder.add_edge("flight_agent", "hotel_agent")
-    builder.add_edge("hotel_agent", "weather_agent")
-    builder.add_edge("weather_agent", "research_agent")
+    builder.add_edge("coordinator", "hotel_agent")
+    builder.add_edge("coordinator", "weather_agent")
+    builder.add_edge("coordinator", "research_agent")
+
+    # Fan-in: all 4 agents → itinerary (waits for all to complete)
+    builder.add_edge("flight_agent", "itinerary_agent")
+    builder.add_edge("hotel_agent", "itinerary_agent")
+    builder.add_edge("weather_agent", "itinerary_agent")
     builder.add_edge("research_agent", "itinerary_agent")
+
     builder.add_edge("itinerary_agent", END)
 
     graph = builder.compile(checkpointer=checkpointer)
@@ -192,7 +186,7 @@ def run_travel_plan(user_query: str, thread_id: str = None) -> dict:
     }
 
     print(f"\n{'='*60}")
-    print(f"🧭 NAVYATRA AI — Starting Travel Plan")
+    print(f"🧭 NAVYATRA AI — Starting Travel Plan (Parallel Mode)")
     print(f"📝 Query: {user_query}")
     print(f"🧵 Thread: {thread_id}")
     print(f"{'='*60}\n")

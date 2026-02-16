@@ -48,9 +48,9 @@ st.markdown("""
     /* ═══════ MARKDOWN — BOLD & READABLE ═══════ */
     .stMarkdown p, .stMarkdown li {
         color: #d4d4d8;
-        font-weight: 500;
-        font-size: 0.92rem;
-        line-height: 1.75;
+        font-weight: 600;
+        font-size: 1.0rem;
+        line-height: 1.8;
     }
 
     .stMarkdown strong, .stMarkdown b {
@@ -61,19 +61,19 @@ st.markdown("""
     .stMarkdown h1 {
         color: #ffffff;
         font-weight: 900;
-        font-size: 1.6rem;
+        font-size: 1.8rem;
     }
 
     .stMarkdown h2 {
         color: #f4f4f5;
         font-weight: 800;
-        font-size: 1.3rem;
+        font-size: 1.5rem;
     }
 
     .stMarkdown h3 {
         color: #e4e4e7;
         font-weight: 700;
-        font-size: 1.1rem;
+        font-size: 1.25rem;
     }
 
     .stMarkdown code {
@@ -419,7 +419,7 @@ st.markdown("""
 <div class="tech-bar">
     <span class="tech">LangGraph</span>
     <span class="tech">LangChain</span>
-    <span class="tech">Groq LLM</span>
+    <span class="tech">Cerebras LLM</span>
     <span class="tech">FastAPI</span>
     <span class="tech">Pydantic</span>
     <span class="tech">SQLite</span>
@@ -485,7 +485,7 @@ if plan_button and user_query:
 
     st.markdown("---")
 
-    with st.spinner("🧭 NavYatra AI is crafting your travel plan... This may take 2-3 minutes."):
+    with st.spinner("🧭 NavYatra AI is crafting your travel plan... This should take about 45 seconds."):
         try:
             response = requests.post(
                 f"{BACKEND_URL}/api/plan",
@@ -574,7 +574,7 @@ if "result" in st.session_state:
     # Session info
     st.markdown(
         f'<div style="text-align:center; color:#3f3f46; font-size:0.7rem; font-weight:600; margin-top:24px;">'
-        f'Session: {result.get("thread_id", "—")} &nbsp;•&nbsp; Powered by Groq + LangGraph</div>',
+        f'Session: {result.get("thread_id", "—")} &nbsp;•&nbsp; Powered by Cerebras + LangGraph</div>',
         unsafe_allow_html=True
     )
 
@@ -589,6 +589,6 @@ elif plan_button and not user_query:
 st.markdown("""
 <div class="site-footer">
     <div class="footer-credit">Built by <strong>Satyam Chhabra</strong></div>
-    <div class="footer-tech">Powered by LangGraph • LangChain • Groq • FastAPI • Streamlit</div>
+    <div class="footer-tech">Powered by LangGraph • LangChain • Cerebras • FastAPI • Streamlit</div>
 </div>
 """, unsafe_allow_html=True)

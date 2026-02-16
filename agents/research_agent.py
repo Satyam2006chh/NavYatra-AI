@@ -19,18 +19,17 @@ load_dotenv()
 
 
 @tool
-def search_attractions(query: str, max_results: int = 5) -> str:
+def search_attractions(query: str) -> str:
     """Search for tourist attractions, local tips, and travel information about a destination.
 
     Args:
         query: Search query about the destination (e.g. "Best tourist attractions in Goa")
-        max_results: Maximum number of results to return
 
     Returns:
         JSON string with titles, URLs, and content about the destination.
     """
     client = ResearchClient()
-    result = client.search(query, max_results)
+    result = client.search(query, 5)
     return json.dumps(result, indent=2)
 
 

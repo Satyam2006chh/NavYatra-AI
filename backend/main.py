@@ -17,7 +17,7 @@ ENV_PATH = os.path.join(PROJECT_ROOT, ".env")
 load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 print(f"📂 Loading .env from: {ENV_PATH}")
-print(f"🔑 GROQ_API_KEY present: {'YES' if os.getenv('GROQ_API_KEY') else 'NO - MISSING!'}")
+print(f"🔑 CEREBRAS_API_KEY present: {'YES' if os.getenv('CEREBRAS_API_KEY') else 'NO - MISSING!'}")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,16 +64,16 @@ def create_travel_plan(request: PlanRequest):
     Generate a complete travel plan from a natural language query.
 
     The query goes through the multi-agent graph:
-    Coordinator → Flight Agent → Hotel Agent → Weather Agent → Research Agent → Itinerary Agent
+    Coordinator → [Flight + Hotel + Weather + Research] (parallel) → Itinerary Agent
     """
     # Re-load env to pick up any changes
     load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-    groq_key = os.getenv("GROQ_API_KEY", "")
-    if not groq_key:
+    cerebras_key = os.getenv("CEREBRAS_API_KEY", "")
+    if not cerebras_key:
         raise HTTPException(
             status_code=500,
-            detail="GROQ_API_KEY is missing! Please add your Groq API key to the .env file and save it (Ctrl+S)."
+            detail="CEREBRAS_API_KEY is missing! Please add your Cerebras API key to the .env file and save it (Ctrl+S)."
         )
 
     try:

@@ -19,18 +19,17 @@ load_dotenv()
 
 
 @tool
-def search_hotels(city_name: str, limit: int = 7) -> str:
+def search_hotels(city_name: str) -> str:
     """Search for hotels in a specific city.
 
     Args:
         city_name: The city to search hotels in (e.g. Goa, Manali, Jaipur)
-        limit: Maximum number of hotels to return
 
     Returns:
         JSON string with hotel names, addresses, and coordinates.
     """
     client = HotelClient()
-    result = client.search(city_name, limit)
+    result = client.search(city_name, 7)
     return json.dumps(result, indent=2)
 
 

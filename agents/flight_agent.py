@@ -20,7 +20,7 @@ load_dotenv()
 
 @tool
 def search_flights(origin_city: str, destination_city: str,
-                   departure_date: str, adults: int = 1,
+                   departure_date: str, adults: str = "1",
                    currency: str = "INR") -> str:
     """Search for available flights between two cities on a specific date.
 
@@ -28,14 +28,14 @@ def search_flights(origin_city: str, destination_city: str,
         origin_city: The departure city name (e.g. Delhi, Mumbai)
         destination_city: The destination city name (e.g. Goa, Manali)
         departure_date: Date in YYYY-MM-DD format
-        adults: Number of adult travelers
+        adults: Number of adult travelers as a string (e.g. "1", "2")
         currency: Currency code (INR, USD, EUR)
 
     Returns:
         JSON string with available flight options including airlines, times, and prices.
     """
     client = FlightClient()
-    result = client.search(origin_city, destination_city, departure_date, adults, currency)
+    result = client.search(origin_city, destination_city, departure_date, int(adults), currency)
     return json.dumps(result, indent=2)
 
 
