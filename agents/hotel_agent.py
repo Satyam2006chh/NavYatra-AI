@@ -1,5 +1,6 @@
 """
-Hotel Agent — Uses LLM tool-calling with retry logic for rate limits.
+Hotel Agent — Uses LLM tool-calling with retry logic.
+Includes fallback for Cerebras compatibility.
 """
 
 import os
@@ -34,7 +35,7 @@ def search_hotels(city_name: str) -> str:
 
 
 def run_hotel_agent(input_text: str) -> str:
-    """Run the Hotel Agent with retry logic."""
+    """Run the Hotel Agent with retry logic and Cerebras fallback."""
     llm = get_llm(temperature=0.3)
     tools = [search_hotels]
     llm_with_tools = llm.bind_tools(tools)
@@ -44,15 +45,29 @@ def run_hotel_agent(input_text: str) -> str:
         HumanMessage(content=input_text)
     ]
 
-    response = invoke_with_retry(llm_with_tools, messages)
-    messages.append(response)
+    try:
+        response = invoke_with_retry(llm_with_tools, messages)
+        messages.append(response)
 
-    if response.tool_calls:
-        for tc in response.tool_calls:
+        if response.tool_calls:
+            tc = response.tool_calls[0]
             tool_result = search_hotels.invoke(tc["args"])
             messages.append(ToolMessage(content=tool_result, tool_call_id=tc["id"]))
 
-        final_response = invoke_with_retry(llm_with_tools, messages)
-        return final_response.content
-    else:
-        return response.content
+            final_response = invoke_with_retry(llm_with_tools, messages)
+            return final_response.content
+        else:
+            return response.content
+
+    except Exception as e:
+        error_str = str(e)
+        if "tool_use_failed" in error_str and "failed_generation" in error_str:
+            print("⚠️  [Hotel Agent] Cerebras tool error, using fallback...")
+            llm_plain = get_llm(temperature=0.3)
+            fallback_messages = [
+                SystemMessage(content=HOTEL_AGENT_SYSTEM_PROMPT),
+                HumanMessage(content=input_text + "\n\nNote: The hotel search tool is temporarily unavailable. Please recommend 6-7 well-known hotels based on your knowledge of this destination.")
+            ]
+            fallback_response = invoke_with_retry(llm_plain, fallback_messages)
+            return fallback_response.content
+        raise e

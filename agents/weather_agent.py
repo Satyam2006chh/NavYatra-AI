@@ -1,5 +1,6 @@
 """
-Weather Agent — Uses LLM tool-calling with retry logic for rate limits.
+Weather Agent — Uses LLM tool-calling with retry logic.
+Includes fallback for Cerebras compatibility.
 """
 
 import os
@@ -34,7 +35,7 @@ def search_weather(city_name: str) -> str:
 
 
 def run_weather_agent(input_text: str) -> str:
-    """Run the Weather Agent with retry logic."""
+    """Run the Weather Agent with retry logic and Cerebras fallback."""
     llm = get_llm(temperature=0.3)
     tools = [search_weather]
     llm_with_tools = llm.bind_tools(tools)
@@ -44,15 +45,29 @@ def run_weather_agent(input_text: str) -> str:
         HumanMessage(content=input_text)
     ]
 
-    response = invoke_with_retry(llm_with_tools, messages)
-    messages.append(response)
+    try:
+        response = invoke_with_retry(llm_with_tools, messages)
+        messages.append(response)
 
-    if response.tool_calls:
-        for tc in response.tool_calls:
+        if response.tool_calls:
+            tc = response.tool_calls[0]
             tool_result = search_weather.invoke(tc["args"])
             messages.append(ToolMessage(content=tool_result, tool_call_id=tc["id"]))
 
-        final_response = invoke_with_retry(llm_with_tools, messages)
-        return final_response.content
-    else:
-        return response.content
+            final_response = invoke_with_retry(llm_with_tools, messages)
+            return final_response.content
+        else:
+            return response.content
+
+    except Exception as e:
+        error_str = str(e)
+        if "tool_use_failed" in error_str and "failed_generation" in error_str:
+            print("⚠️  [Weather Agent] Cerebras tool error, using fallback...")
+            llm_plain = get_llm(temperature=0.3)
+            fallback_messages = [
+                SystemMessage(content=WEATHER_AGENT_SYSTEM_PROMPT),
+                HumanMessage(content=input_text + "\n\nNote: The weather tool is temporarily unavailable. Please provide general weather guidance based on your knowledge of this destination and time of year.")
+            ]
+            fallback_response = invoke_with_retry(llm_plain, fallback_messages)
+            return fallback_response.content
+        raise e

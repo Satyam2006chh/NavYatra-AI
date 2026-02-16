@@ -1,22 +1,20 @@
 <div align="center">
-  
-![NavYatra AI Showcase](assets/showcase.png)
 
 # 🧭 NavYatra AI
 
-### Intelligent Multi-Agent Travel Planning System
+### Multi-Agent Travel Intelligence & Planning System
 
-**Powered by 6 Specialized AI Agents | LangGraph Orchestration | Groq LLM**
+**6 Specialized AI Agents | Parallel Execution | Real-Time APIs**
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
-[![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-F55036?style=for-the-badge)](https://groq.com)
+[![Cerebras](https://img.shields.io/badge/Cerebras-Llama_3.3_70B-6C5CE7?style=for-the-badge)](https://cerebras.ai)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Frontend-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
 
 ---
 
-*NavYatra AI transforms a simple travel query into a comprehensive, day-by-day travel itinerary using a coordinated system of AI agents — each specialized in flights, hotels, weather, attractions, and itinerary planning.*
+*NavYatra AI transforms a single natural-language travel query into a comprehensive, weather-aware, day-by-day travel plan — powered by 6 coordinated AI agents running in parallel.*
 
 </div>
 
@@ -24,139 +22,106 @@
 
 ## 📋 Problem Statement
 
-Planning a trip involves juggling **multiple platforms** — one for flights, another for hotels, a weather app, travel blogs for attractions, and then manually stitching everything into a coherent plan. This is:
+Planning a trip today means spending **hours juggling 5-6 platforms** — flight aggregators, hotel booking sites, weather apps, travel blogs, and review sites — then manually stitching everything into a coherent plan.
 
-- **Time-consuming** — hours spent across 5-6 different websites
-- **Fragmented** — no single platform combines flights + hotels + weather + attractions
-- **Overwhelming** — too many options without intelligent recommendations
-- **Static** — traditional tools don't adapt to weather conditions or traveler preferences
+| Pain Point | Impact |
+|:-----------|:-------|
+| **Fragmented Research** | Travelers switch between 5+ platforms with no unified view |
+| **Time Drain** | Average trip planning takes 3-5 hours of manual research |
+| **No Intelligence** | Traditional tools list options but don't rank, analyze, or recommend |
+| **Weather Blindness** | Plans are made without considering weather conditions |
+| **No Personalization** | Static results that ignore traveler preferences |
 
-**NavYatra AI solves this** by deploying 6 specialized AI agents that work together to research, analyze, and synthesize a complete travel plan from a single natural language query.
+**NavYatra AI solves this** by deploying 6 specialized AI agents that autonomously research, analyze, and synthesize a complete travel plan from a single sentence — in under 45 seconds.
 
 ---
 
-## ✨ What NavYatra AI Does
+## ✨ What It Does
 
 > **Input**: *"Plan a 3-day trip from Delhi to Goa starting July 10, 2026 for 2 adults"*
 >
-> **Output**: A comprehensive travel plan with analyzed flights, 6-7 hotel options, weather-aware packing advice, curated attractions, and a day-by-day itinerary.
+> **Output**: Analyzed flights with price comparisons, 6-7 hotel recommendations, weather-aware packing advice, curated attractions with insider tips, and a day-by-day itinerary — all in one go.
 
-### Key Capabilities
-
-| Feature | Description |
-|---------|-------------|
-| ✈️ **Flight Intelligence** | Searches real flights via Amadeus API, analyzes best/cheapest/fastest options |
-| 🏨 **Hotel Discovery** | Finds 6-7 accommodation options (hotels, resorts, villas) via Geoapify |
-| 🌤️ **Weather Analysis** | Current conditions + 5-day forecast with packing suggestions |
-| 🎯 **Attraction Research** | Discovers must-visit places, food guides, cultural tips via Tavily |
-| 📋 **Smart Itinerary** | Synthesizes all data into a weather-aware, day-by-day travel plan |
-| 🛡️ **Fallback Handling** | Cities without airports get professional suggestions for alternative transport |
+| Agent | Capability |
+|:------|:-----------|
+| 🎯 **Coordinator** | Parses natural language into structured travel parameters |
+| ✈️ **Flight Intelligence** | Searches real flights via Amadeus, ranks best/cheapest/fastest |
+| 🏨 **Hotel Discovery** | Finds 6-7 accommodations with type, location advantage, and suitability |
+| 🌤️ **Weather Analysis** | Current conditions + 5-day forecast + packing recommendations |
+| 🔍 **Research Agent** | Discovers attractions, food guides, cultural tips, safety advice |
+| 📋 **Itinerary Planner** | Synthesizes everything into a weather-aware, day-by-day plan |
 
 ---
 
-## 🏗️ Architecture & Workflow
+## 🏗️ Architecture
 
-NavYatra AI uses a **multi-agent graph architecture** powered by LangGraph. Each agent is a specialized AI node that performs one task exceptionally well.
-
-### System Architecture
+NavYatra AI uses a **multi-agent graph architecture** powered by LangGraph with parallel fan-out execution.
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                     STREAMLIT FRONTEND                           │
-│              (Premium Dark UI + User Input)                      │
-└──────────────────────┬───────────────────────────────────────────┘
-                       │ HTTP POST /api/plan
-                       ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                     FASTAPI BACKEND                              │
-│           (REST API + Request Validation)                        │
-└──────────────────────┬───────────────────────────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                  LANGGRAPH WORKFLOW                               │
-│                                                                  │
-│   ┌─────────────┐                                                │
-│   │ Coordinator │──── Parses natural language → TravelQuery      │
-│   └──────┬──────┘                                                │
-│          │                                                       │
-│          ▼                                                       │
-│   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│   │ Flight Agent │  │ Hotel Agent  │  │Weather Agent │          │
-│   │  (Amadeus)   │  │ (Geoapify)   │  │(OpenWeather) │          │
-│   └──────┬───────┘  └──────┬───────┘  └──────┬───────┘          │
-│          │                 │                  │                   │
-│          │          ┌──────────────┐          │                   │
-│          │          │Research Agent│          │                   │
-│          │          │  (Tavily)    │          │                   │
-│          │          └──────┬───────┘          │                   │
-│          │                 │                  │                   │
-│          ▼                 ▼                  ▼                   │
-│   ┌──────────────────────────────────────────────────┐           │
-│   │           ITINERARY SYNTHESIS AGENT               │           │
-│   │     (Combines all outputs → Day-by-day plan)      │           │
-│   └───────────────────────────────────────────────────┘           │
-│                                                                  │
-│   SQLite Checkpointer (Session Persistence)                      │
-└──────────────────────────────────────────────────────────────────┘
+                         ┌──────────────────┐
+                         │   STREAMLIT UI   │
+                         │  (Dark Theme)    │
+                         └────────┬─────────┘
+                                  │ HTTP POST /api/plan
+                                  ▼
+                         ┌──────────────────┐
+                         │  FASTAPI SERVER  │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │   COORDINATOR    │
+                         │  (Query Parser)  │
+                         └──┬───┬───┬───┬───┘
+                            │   │   │   │
+               ┌────────────┘   │   │   └────────────┐
+               ▼                ▼   ▼                ▼
+        ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐
+        │   FLIGHT   │  │   HOTEL    │  │  WEATHER   │  │  RESEARCH  │
+        │  (Amadeus) │  │ (Geoapify) │  │(OpenWeather│  │  (Tavily)  │
+        └─────┬──────┘  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘
+              │               │               │               │
+              └───────────────┴───────┬───────┴───────────────┘
+                                      ▼
+                             ┌──────────────────┐
+                             │    ITINERARY     │
+                             │   SYNTHESIZER    │
+                             └──────────────────┘
 ```
 
-### Agent Workflow (Current: Sequential)
-
-```
-START → Coordinator → Flight Agent → Hotel Agent → Weather Agent → Research Agent → Itinerary Agent → END
-```
-
-> **Note**: Flight, Hotel, Weather, and Research agents are architecturally independent — they only need the Coordinator's output. The system is designed for future parallel execution when rate limits allow, which would reduce response time from ~2.5 minutes to ~40 seconds.
-
-### How Each Agent Works
-
-Each domain agent follows this pattern:
-
-```
-1. Receive structured query from Coordinator
-2. Call external API (Amadeus/Geoapify/OpenWeather/Tavily)
-3. Feed raw API data to Groq LLM with domain-specific prompt
-4. LLM analyzes, ranks, and formats the data
-5. Return structured, human-readable analysis
-```
+**Key**: The 4 domain agents run **in parallel** (LangGraph fan-out), reducing response time from ~3 minutes to **~35-45 seconds**.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Core AI Framework
+### AI & Orchestration
 
-| Technology | Purpose |
-|-----------|---------|
-| **LangGraph** | Multi-agent workflow orchestration with state management |
-| **LangChain** | LLM tool-calling, prompt templates, and chain composition |
-| **Groq (Llama 3.3 70B)** | Ultra-fast LLM inference for all 6 agents |
-| **Pydantic** | Strict schema validation for structured data extraction |
+| Technology | Role |
+|:-----------|:-----|
+| **LangGraph** | Multi-agent workflow with parallel fan-out/fan-in execution |
+| **LangChain** | LLM tool-calling, prompt engineering, and chain composition |
+| **Cerebras (Llama 3.3 70B)** | High-speed LLM inference — 1M tokens/day free tier |
+| **Pydantic** | Structured data validation for query parsing |
 
-### Backend
+### Backend & Frontend
 
-| Technology | Purpose |
-|-----------|---------|
-| **FastAPI** | REST API server with automatic OpenAPI documentation |
+| Technology | Role |
+|:-----------|:-----|
+| **FastAPI** | REST API with automatic OpenAPI docs |
+| **Streamlit** | Interactive web UI with custom obsidian-dark theme |
 | **SQLite** | Session persistence via LangGraph checkpointer |
-| **Python-dotenv** | Secure environment variable management |
-
-### Frontend
-
-| Technology | Purpose |
-|-----------|---------|
-| **Streamlit** | Interactive web UI with custom dark theme |
-| **Custom CSS** | Premium obsidian-dark design with cyan/emerald accents |
 
 ### External APIs
 
-| API | Provider | Purpose | Data Returned |
-|-----|----------|---------|---------------|
-| **Amadeus** | Amadeus for Developers | Flight search & pricing | Airlines, times, prices, stops |
-| **Geoapify** | Geoapify Places | Hotel/accommodation discovery | Hotel names, addresses, coordinates |
-| **OpenWeather** | OpenWeatherMap | Weather data & forecasts | Temperature, humidity, 5-day forecast |
-| **Tavily** | Tavily AI | Travel research & attractions | Tourist attractions, food, cultural tips |
+| API | Provider | What It Returns |
+|:----|:---------|:----------------|
+| **Amadeus** | [developers.amadeus.com](https://developers.amadeus.com) | Flight routes, prices, airlines, timings |
+| **Geoapify** | [geoapify.com](https://www.geoapify.com) | Hotel names, addresses, types, coordinates |
+| **OpenWeather** | [openweathermap.org](https://openweathermap.org/api) | Temperature, humidity, wind, 5-day forecast |
+| **Tavily** | [tavily.com](https://tavily.com) | Tourist attractions, food guides, cultural tips |
+
+> **Note on APIs**: Amadeus and Geoapify are currently on **sandbox/test environments**. Migration to production endpoints is planned — this will unlock real-time booking data and global availability with no functional code changes required.
 
 ---
 
@@ -165,23 +130,23 @@ Each domain agent follows this pattern:
 ```
 NavYatra-AI/
 ├── agents/                  # AI Agent implementations
-│   ├── coordinator.py       # Query parser (NL → structured TravelQuery)
-│   ├── flight_agent.py      # Flight search & analysis agent
-│   ├── hotel_agent.py       # Hotel discovery & ranking agent
-│   ├── weather_agent.py     # Weather analysis & packing agent
-│   ├── research_agent.py    # Attraction & cultural research agent
-│   ├── itinerary_agent.py   # Final itinerary synthesis agent
-│   └── llm_utils.py         # Rate limit handling, retries, LLM factory
+│   ├── coordinator.py       # NL query → structured TravelQuery
+│   ├── flight_agent.py      # Flight search & analysis
+│   ├── hotel_agent.py       # Hotel discovery & ranking
+│   ├── weather_agent.py     # Weather analysis & packing advice
+│   ├── research_agent.py    # Attractions & cultural research
+│   ├── itinerary_agent.py   # Final itinerary synthesis
+│   └── llm_utils.py         # LLM factory, retry logic, rate limit handling
 │
 ├── api/                     # External API clients
-│   ├── flights.py           # Amadeus API client (IATA codes, flight search)
-│   ├── hotels.py            # Geoapify API client (geocoding, hotel search)
-│   ├── weather.py           # OpenWeather API client (current + forecast)
-│   └── research.py          # Tavily API client (web research)
+│   ├── flights.py           # Amadeus API client
+│   ├── hotels.py            # Geoapify API client
+│   ├── weather.py           # OpenWeather API client
+│   └── research.py          # Tavily API client
 │
 ├── graph/                   # LangGraph orchestration
-│   ├── state.py             # Shared state definition (TypedDict)
-│   └── workflow.py          # Graph builder, node definitions, runner
+│   ├── state.py             # Shared state (TypedDict)
+│   └── workflow.py          # Graph builder + parallel execution
 │
 ├── prompts/                 # Agent prompt templates
 │   └── templates.py         # All 6 agent system prompts
@@ -189,16 +154,15 @@ NavYatra-AI/
 ├── schemas/                 # Data models
 │   └── models.py            # TravelQuery Pydantic model
 │
-├── backend/                 # REST API server
+├── backend/                 # REST API
 │   └── main.py              # FastAPI app with /api/plan endpoint
 │
-├── frontend/                # Web interface
-│   └── app.py               # Streamlit app with premium dark UI
+├── frontend/                # Web UI
+│   └── app.py               # Streamlit app with premium dark theme
 │
-├── .env                     # API keys (not tracked in git)
 ├── .env.example             # Template for required API keys
-├── .gitignore               # Git ignore rules
-└── requirements.txt         # Python dependencies
+├── requirements.txt         # Python dependencies
+└── README.md
 ```
 
 ---
@@ -208,178 +172,78 @@ NavYatra-AI/
 ### Prerequisites
 
 - **Python 3.12+**
-- API keys for: Groq, Amadeus, Geoapify, OpenWeather, Tavily
+- API keys for: **Cerebras**, **Amadeus**, **Geoapify**, **OpenWeather**, **Tavily**
 
-### 1. Clone the Repository
+### Setup
 
 ```bash
+# 1. Clone
 git clone https://github.com/Satyam2006chh/NavYatra-AI.git
 cd NavYatra-AI
-```
 
-### 2. Install Dependencies
-
-```bash
+# 2. Install dependencies
 pip install -r requirements.txt
-```
 
-### 3. Configure Environment Variables
-
-Copy the example env file and fill in your API keys:
-
-```bash
+# 3. Configure API keys
 cp .env.example .env
-```
+# Edit .env with your keys
 
-Edit `.env` with your keys:
-
-```env
-GROQ_API_KEY=your_groq_api_key
-AMADEUS_CLIENT_ID=your_amadeus_client_id
-AMADEUS_CLIENT_SECRET=your_amadeus_client_secret
-GEOAPIFY_API_KEY=your_geoapify_api_key
-OPENWEATHER_API_KEY=your_openweather_api_key
-TAVILY_API_KEY=your_tavily_api_key
-```
-
-### 4. Start the Backend
-
-```bash
+# 4. Start backend
 python -m uvicorn backend.main:app --reload --port 8000
-```
 
-### 5. Start the Frontend (in a new terminal)
-
-```bash
+# 5. Start frontend (new terminal)
 streamlit run frontend/app.py --server.port 8501
+
+# 6. Open http://localhost:8501
 ```
 
-### 6. Open the App
+### Getting API Keys
 
-Navigate to **http://localhost:8501** in your browser.
-
----
-
-## 📡 API Reference
-
-### Health Check
-
-```http
-GET /api/health
-```
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "service": "NavYatra AI"
-}
-```
-
-### Generate Travel Plan
-
-```http
-POST /api/plan
-Content-Type: application/json
-
-{
-  "query": "Plan a 3-day trip from Delhi to Goa starting July 10, 2026 for 2 adults",
-  "thread_id": "optional-session-id"
-}
-```
-
-**Response:**
-```json
-{
-  "thread_id": "uuid",
-  "parsed_input": { "origin_city": "Delhi", "destination_city": "Goa", ... },
-  "flight_results": "✈️ Flight analysis...",
-  "hotel_results": "🏨 Hotel recommendations...",
-  "weather_results": "🌤️ Weather analysis...",
-  "research_results": "🎯 Attractions & tips...",
-  "itinerary": "📋 Day-by-day travel plan..."
-}
-```
-
----
-
-## 🔑 Getting API Keys
-
-| API | Sign Up Link | Free Tier |
-|-----|-------------|-----------|
-| **Groq** | [console.groq.com](https://console.groq.com) | 100K tokens/day |
+| API | Sign Up | Free Tier |
+|:----|:--------|:----------|
+| **Cerebras** | [cloud.cerebras.ai](https://cloud.cerebras.ai) | 1M tokens/day |
 | **Amadeus** | [developers.amadeus.com](https://developers.amadeus.com) | 500 calls/month |
-| **Geoapify** | [geoapify.com](https://www.geoapify.com) | 3000 calls/day |
-| **OpenWeather** | [openweathermap.org](https://openweathermap.org/api) | 1000 calls/day |
-| **Tavily** | [tavily.com](https://tavily.com) | 1000 calls/month |
+| **Geoapify** | [geoapify.com](https://www.geoapify.com) | 3,000 calls/day |
+| **OpenWeather** | [openweathermap.org](https://openweathermap.org/api) | 1,000 calls/day |
+| **Tavily** | [tavily.com](https://tavily.com) | 1,000 calls/month |
 
 ---
 
-## 🧠 LLM & AI Details
+## 📡 API Endpoints
 
-NavYatra AI uses **Groq's inference engine** with the **Llama 3.3 70B Versatile** model for all agent reasoning. The system is also compatible with **OpenAI** models — simply swap the LLM provider in `agents/llm_utils.py` to use `ChatOpenAI` instead of `ChatGroq`.
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `GET` | `/api/health` | Health check — returns `{"status": "healthy"}` |
+| `POST` | `/api/plan` | Generate a complete travel plan from a natural language query |
 
-### Why Groq?
-- **Speed**: Groq's custom LPU (Language Processing Unit) provides the fastest LLM inference available
-- **Quality**: Llama 3.3 70B delivers GPT-4 level reasoning at no cost
-- **Free Access**: Generous free tier for development and testing
-
-### Rate Limit Management
-The system includes built-in rate limit handling:
-- **Exponential backoff** retries on 429/413 errors
-- **Agent delays** between sequential calls to respect free-tier TPM limits
-- **Output truncation** to keep token usage within limits
-
----
-
-## 🌟 Realistic Use Cases
-
-NavYatra AI is designed for real-world travel scenarios where complexity, speed, and personalization matter. Let's look at how it transforms the travel experience:
-
-### 1. The Family Vacationer 👨‍👩‍👧‍👦
-*   **Use Case**: Planning a long-awaited trip to Kyoto and Bali with specific needs for family-friendly retreats.
-*   **NavYatra Solution**: As shown in the **Showcase Image**, NavYatra generates a multi-destination itinerary that balances cultural exploration in Kyoto with tropical relaxation in Bali.
-
-### 2. The Busy Professional 💼
-*   **Use Case**: Needs to commute between major hubs for meetings with zero time to research.
-*   **NavYatra Solution**: High-speed transit and optimal flight paths are calculated by the **Flight Agent**, providing flight numbers and exact timings instantly.
-
-### 3. The Solo Adventurer ⛰️
-*   **Use Case**: Looking for hidden gems and authentic local food spots.
-*   **NavYatra Solution**: The **Research Agent** digs deep into local culture to recommend hidden temples and local street food guides.
+**Example Request:**
+```json
+{
+  "query": "Plan a 3-day trip from Delhi to Goa starting July 10, 2026 for 2 adults"
+}
+```
 
 ---
 
-## 📸 UI Preview
+## 🗺️ Future Roadmap
 
-NavYatra AI features a premium **obsidian-dark theme** with **cyan and emerald accents**:
-
-- **Hero section** with gradient-styled branding
-- **Feature pills** showcasing agent capabilities
-- **One-click example prompts** for quick testing
-- **Tabbed results** — Flights, Hotels, Weather, Attractions, Itinerary
-- **Trip metrics** — origin, destination, date, duration at a glance
-- **Footer credit** — Built by Satyam Chhabra
-
----
-
-## 🚀 Future Roadmap
-
-NavYatra AI is continuously evolving. Here’s what we’re working on:
-
-*   **Production API Migration**: Currently using the **Amadeus & Geoapify Sandbox** environments. We will soon shift to **Production Services** to provide live, real-time booking data and global availability.
-*   **Booking System Integration (MCP)**: Integrating the **Model Context Protocol (MCP)** to enable direct flight and hotel booking capabilities within the AI interface.
-*   **Latency Optimization**: Implementing **Parallel Agent Execution** to reduce total planning time from minutes to seconds.
-*   **Mobile App**: Expanding NavYatra AI to a dedicated mobile experience for on-the-go travel assistance.
+| Feature | Description | Status |
+|:--------|:------------|:-------|
+| **Production APIs** | Migrate Amadeus & Geoapify from sandbox to production for live booking data | 🔜 Planned |
+| **MCP Server Integration** | Model Context Protocol for direct flight and hotel booking within the AI interface | 🔜 Planned |
+| **Voice AI Agent** | Conversational voice interface to search and book flights hands-free | 📋 Designed |
+| **Android App** | Native mobile experience with on-the-go travel planning and offline itineraries | 📋 Designed |
+| **Multi-Destination Trips** | Support for complex multi-city itineraries with inter-city transport optimization | 💡 Ideation |
+| **Budget Optimizer** | AI-powered budget allocation across flights, hotels, food, and activities | 💡 Ideation |
 
 ---
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'Add your feature'`)
+4. Push to the branch (`git push origin feature/your-feature`)
 5. Open a Pull Request
 
 ---
@@ -392,8 +256,6 @@ This project is open source and available under the [MIT License](LICENSE).
 
 <div align="center">
 
-**Built with ❤️ by [Satyam Chhabra](https://github.com/Satyam2006chh)**
-
-*NavYatra AI — Your AI-Powered Travel Companion* 🧭
+**Built by [Satyam Chhabra](https://github.com/Satyam2006chh)** · NavYatra AI — Your AI Travel Companion 🧭
 
 </div>

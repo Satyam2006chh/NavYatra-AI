@@ -49,7 +49,7 @@ st.markdown("""
     .stMarkdown p, .stMarkdown li {
         color: #d4d4d8;
         font-weight: 600;
-        font-size: 1.0rem;
+        font-size: 1.05rem;
         line-height: 1.8;
     }
 
@@ -61,19 +61,19 @@ st.markdown("""
     .stMarkdown h1 {
         color: #ffffff;
         font-weight: 900;
-        font-size: 1.8rem;
+        font-size: 1.9rem;
     }
 
     .stMarkdown h2 {
         color: #f4f4f5;
         font-weight: 800;
-        font-size: 1.5rem;
+        font-size: 1.55rem;
     }
 
     .stMarkdown h3 {
         color: #e4e4e7;
         font-weight: 700;
-        font-size: 1.25rem;
+        font-size: 1.3rem;
     }
 
     .stMarkdown code {
@@ -142,7 +142,7 @@ st.markdown("""
         gap: 8px;
         padding: 10px 20px;
         border-radius: 10px;
-        font-size: 0.82rem;
+        font-size: 0.9rem;
         font-weight: 600;
         color: #a1a1aa;
         background: #18181b;
@@ -157,7 +157,7 @@ st.markdown("""
     }
 
     .feat-icon {
-        font-size: 1.15rem;
+        font-size: 1.3rem;
     }
 
     /* ═══════ TECH TAGS ═══════ */
@@ -172,7 +172,7 @@ st.markdown("""
     .tech {
         padding: 4px 12px;
         border-radius: 5px;
-        font-size: 0.65rem;
+        font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
