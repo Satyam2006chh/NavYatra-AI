@@ -11,6 +11,7 @@
 [![Cerebras](https://img.shields.io/badge/Cerebras-Llama_3.3_70B-6C5CE7?style=for-the-badge)](https://cerebras.ai)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Frontend-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
 
 ---
 
@@ -160,6 +161,9 @@ NavYatra-AI/
 ├── frontend/                # Web UI
 │   └── app.py               # Streamlit app with premium dark theme
 │
+├── Dockerfile               # Docker container configuration
+├── .dockerignore            # Files excluded from Docker image
+├── start.sh                 # Startup script for Docker container
 ├── .env.example             # Template for required API keys
 ├── requirements.txt         # Python dependencies
 └── README.md
@@ -206,6 +210,57 @@ streamlit run frontend/app.py --server.port 8501
 | **Geoapify** | [geoapify.com](https://www.geoapify.com) | 3,000 calls/day |
 | **OpenWeather** | [openweathermap.org](https://openweathermap.org/api) | 1,000 calls/day |
 | **Tavily** | [tavily.com](https://tavily.com) | 1,000 calls/month |
+
+---
+
+## 🐳 Docker
+
+NavYatra AI is fully containerized with Docker. This means you can run the entire application — backend + frontend — inside a single container with one command. No need to install Python or any dependencies on your machine.
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- A `.env` file with your API keys (see [Getting API Keys](#getting-api-keys))
+
+### Build & Run
+
+```bash
+# 1. Build the Docker image
+docker build -t navyatra-ai .
+
+# 2. Run the container
+docker run --env-file .env -p 8000:8000 -p 8501:8501 navyatra-ai
+
+# 3. Open in browser
+#    Frontend → http://localhost:8501
+#    Backend  → http://localhost:8000/api/health
+```
+
+### Stop the Container
+
+```bash
+# Press Ctrl+C in the terminal, or:
+docker ps                    # Find the container ID
+docker stop <container_id>   # Stop it
+```
+
+### How It Works
+
+```
+┌─────────────────────────────────────────┐
+│           Docker Container              │
+│                                         │
+│   ┌─────────────┐  ┌────────────────┐   │
+│   │  FastAPI     │  │  Streamlit     │   │
+│   │  Backend     │  │  Frontend      │   │
+│   │  :8000       │  │  :8501         │   │
+│   └─────────────┘  └────────────────┘   │
+│                                         │
+│   Python 3.12 + All Dependencies        │
+└─────────────────────────────────────────┘
+```
+
+> **Why Docker?** It eliminates "works on my machine" problems. The same container runs identically on any machine — your laptop, a teammate's system, or a cloud server.
 
 ---
 

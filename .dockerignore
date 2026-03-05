@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Environment
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Legacy test files
+ninja_api/
+
+# Assets (not needed at runtime)
+assets/
