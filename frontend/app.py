@@ -23,7 +23,7 @@ st.set_page_config(
     page_title="NavYatra AI",
     page_icon="🧭",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # ============================================================
@@ -384,8 +384,95 @@ st.markdown("""
     ::-webkit-scrollbar-thumb:hover {
         background: #3f3f46;
     }
+
+    /* ═══════ SIDEBAR ═══════ */
+    [data-testid="stSidebar"] {
+        background: #0f0f11;
+        border-right: 1px solid #1c1c1e;
+    }
+
+    [data-testid="stSidebar"] .stMarkdown p {
+        color: #a1a1aa;
+        font-size: 0.85rem;
+    }
+
+    [data-testid="stSidebar"] .stTextInput > div > div > input {
+        background: #18181b !important;
+        border: 1px solid #27272a !important;
+        border-radius: 8px !important;
+        color: #e4e4e7 !important;
+        font-family: 'Inter', monospace !important;
+        font-size: 0.85rem !important;
+    }
+
+    [data-testid="stSidebar"] .stTextInput > div > div > input:focus {
+        border-color: #06b6d4 !important;
+        box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.1) !important;
+    }
+
+    .sidebar-title {
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 1.1rem;
+        margin-bottom: 4px;
+    }
+
+    .sidebar-subtitle {
+        color: #52525b;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    .key-section-label {
+        color: #06b6d4;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        margin-top: 12px;
+        margin-bottom: 4px;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+
+# ============================================================
+# SIDEBAR — API Key Configuration
+# ============================================================
+
+with st.sidebar:
+    st.markdown('<div class="sidebar-title">🔑 API Keys</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-subtitle">Enter your own API keys to use NavYatra AI</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="key-section-label">🧠 LLM Provider</div>', unsafe_allow_html=True)
+    api_cerebras = st.text_input("Cerebras API Key", type="password", key="cerebras_key",
+                                  placeholder="Get free key → cloud.cerebras.ai")
+
+    st.markdown('<div class="key-section-label">✈️ Flight Search</div>', unsafe_allow_html=True)
+    api_amadeus_id = st.text_input("Amadeus Client ID", type="password", key="amadeus_id",
+                                    placeholder="developers.amadeus.com")
+    api_amadeus_secret = st.text_input("Amadeus Client Secret", type="password", key="amadeus_secret",
+                                        placeholder="developers.amadeus.com")
+
+    st.markdown('<div class="key-section-label">🏨 Hotel Discovery</div>', unsafe_allow_html=True)
+    api_geoapify = st.text_input("Geoapify API Key", type="password", key="geoapify_key",
+                                  placeholder="geoapify.com")
+
+    st.markdown('<div class="key-section-label">🌤️ Weather</div>', unsafe_allow_html=True)
+    api_openweather = st.text_input("OpenWeather API Key", type="password", key="openweather_key",
+                                     placeholder="openweathermap.org")
+
+    st.markdown('<div class="key-section-label">🔍 Research</div>', unsafe_allow_html=True)
+    api_tavily = st.text_input("Tavily API Key", type="password", key="tavily_key",
+                                placeholder="tavily.com")
+
+    st.markdown("---")
+    st.markdown(
+        '<p style="color:#3f3f46; font-size:0.7rem; font-weight:600;">'
+        '🔒 Keys are sent directly to the backend per request and are never stored.</p>',
+        unsafe_allow_html=True
+    )
 
 
 # ============================================================
@@ -478,32 +565,57 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 if plan_button and user_query:
 
-    if "thread_id" not in st.session_state:
-        st.session_state["thread_id"] = str(uuid.uuid4())
+    # Validate all API keys are provided
+    all_keys = {
+        "Cerebras API Key": api_cerebras,
+        "Amadeus Client ID": api_amadeus_id,
+        "Amadeus Client Secret": api_amadeus_secret,
+        "Geoapify API Key": api_geoapify,
+        "OpenWeather API Key": api_openweather,
+        "Tavily API Key": api_tavily,
+    }
+    missing_keys = [name for name, value in all_keys.items() if not value]
 
-    thread_id = st.session_state["thread_id"]
+    if missing_keys:
+        st.error(f"⚠️ Please enter all API keys in the sidebar before generating a plan.")
+        st.warning(f"**Missing keys:** {', '.join(missing_keys)}")
+        st.info("💡 Open the sidebar (click **>** at the top-left) to enter your API keys. All keys are free to obtain!")
+    else:
+        if "thread_id" not in st.session_state:
+            st.session_state["thread_id"] = str(uuid.uuid4())
 
-    st.markdown("---")
+        thread_id = st.session_state["thread_id"]
 
-    with st.spinner("🧭 NavYatra AI is crafting your travel plan... This should take about 45 seconds."):
-        try:
-            response = requests.post(
-                f"{BACKEND_URL}/api/plan",
-                json={"query": user_query, "thread_id": thread_id},
-                timeout=600
-            )
+        st.markdown("---")
 
-            if response.status_code == 200:
-                result = response.json()
-                st.session_state["result"] = result
-            else:
-                st.error(f"❌ Error: {response.text}")
+        with st.spinner("🧭 NavYatra AI is crafting your travel plan... This should take about 45 seconds."):
+            try:
+                response = requests.post(
+                    f"{BACKEND_URL}/api/plan",
+                    json={
+                        "query": user_query,
+                        "thread_id": thread_id,
+                        "cerebras_api_key": api_cerebras,
+                        "amadeus_client_id": api_amadeus_id,
+                        "amadeus_client_secret": api_amadeus_secret,
+                        "geoapify_api_key": api_geoapify,
+                        "openweather_api_key": api_openweather,
+                        "tavily_api_key": api_tavily,
+                    },
+                    timeout=600
+                )
 
-        except requests.exceptions.ConnectionError:
-            st.error("⚠️ Cannot connect to backend. Make sure the FastAPI server is running on port 8000.")
-            st.code("python -m uvicorn backend.main:app --reload --port 8000", language="bash")
-        except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
+                if response.status_code == 200:
+                    result = response.json()
+                    st.session_state["result"] = result
+                else:
+                    st.error(f"❌ Error: {response.text}")
+
+            except requests.exceptions.ConnectionError:
+                st.error("⚠️ Cannot connect to backend. Make sure the FastAPI server is running on port 8000.")
+                st.code("python -m uvicorn backend.main:app --reload --port 8000", language="bash")
+            except Exception as e:
+                st.error(f"❌ Error: {str(e)}")
 
 
 # Display results

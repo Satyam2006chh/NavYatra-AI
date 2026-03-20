@@ -12,9 +12,9 @@ load_dotenv()
 
 
 def get_llm(temperature: float = 0.3):
-    """Get a ChatCerebras LLM instance (Llama 3.3 70B)."""
+    """Get a ChatCerebras LLM instance."""
     return ChatCerebras(
-        model="llama-3.3-70b",
+        model="llama3.1-8b",
         api_key=os.getenv("CEREBRAS_API_KEY"),
         temperature=temperature
     )
