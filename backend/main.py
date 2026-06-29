@@ -1,5 +1,5 @@
 """
-FastAPI Backend — NavYatra AI
+is FastAPI Backend — NavYatra AI
 Exposes the travel planning graph as a REST API.
 """
 
@@ -38,11 +38,9 @@ class PlanRequest(BaseModel):
     thread_id: Optional[str] = None
     # User-provided API keys
     cerebras_api_key: Optional[str] = None
-    amadeus_client_id: Optional[str] = None
-    amadeus_client_secret: Optional[str] = None
-    geoapify_api_key: Optional[str] = None
+    serpapi_key: Optional[str] = None
+    rapidapi_key: Optional[str] = None
     openweather_api_key: Optional[str] = None
-    tavily_api_key: Optional[str] = None
 
 
 class HealthResponse(BaseModel):
@@ -70,11 +68,9 @@ def create_travel_plan(request: PlanRequest):
     # so existing API clients (os.getenv) pick them up automatically
     key_mapping = {
         "CEREBRAS_API_KEY": request.cerebras_api_key,
-        "AMADEUS_CLIENT_ID": request.amadeus_client_id,
-        "AMADEUS_CLIENT_SECRET": request.amadeus_client_secret,
-        "GEOAPIFY_API_KEY": request.geoapify_api_key,
+        "SERPAPI_KEY": request.serpapi_key,
+        "RAPIDAPI_KEY": request.rapidapi_key,
         "OPENWEATHER_API_KEY": request.openweather_api_key,
-        "TAVILY_API_KEY": request.tavily_api_key,
     }
 
     for env_name, value in key_mapping.items():
@@ -90,6 +86,37 @@ def create_travel_plan(request: PlanRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+from fastapi.responses import StreamingResponse
+import json
+
+@app.post("/api/plan_stream")
+def stream_travel_plan_endpoint(request: PlanRequest):
+    """
+    Stream the travel plan execution progress as Server-Sent Events (SSE).
+    Yields live updates as each agent completes.
+    """
+    key_mapping = {
+        "CEREBRAS_API_KEY": request.cerebras_api_key,
+        "SERPAPI_KEY": request.serpapi_key,
+        "RAPIDAPI_KEY": request.rapidapi_key,
+        "OPENWEATHER_API_KEY": request.openweather_api_key,
+    }
+    for env_name, value in key_mapping.items():
+        if value:
+            os.environ[env_name] = value
+
+    from graph.workflow import run_travel_plan_stream
+
+    def event_generator():
+        try:
+            for event in run_travel_plan_stream(request.query, request.thread_id):
+                yield f"data: {json.dumps(event)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 if __name__ == "__main__":

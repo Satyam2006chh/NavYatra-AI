@@ -1,7 +1,3 @@
-"""
-Coordinator Agent — Parses user's natural language query into structured data.
-Uses LLM with Pydantic structured output extraction.
-"""
 
 import os
 import sys
@@ -17,10 +13,6 @@ load_dotenv()
 
 
 def parse_user_query(user_query: str) -> dict:
-    """
-    Parse natural language travel query into structured TravelQuery using LLM.
-    Uses model.with_structured_output(Pydantic Model) for strict extraction.
-    """
     llm = get_llm(temperature=0)
     structured_llm = llm.with_structured_output(TravelQuery)
 

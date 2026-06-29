@@ -11,7 +11,6 @@
 [![Cerebras](https://img.shields.io/badge/Cerebras-Llama_3.3_70B-6C5CE7?style=for-the-badge)](https://cerebras.ai)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Frontend-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
-[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
 
 ---
 
@@ -21,296 +20,176 @@
 
 ---
 
-## 📋 Problem Statement
+## 📋 Problem Statement & Why We Built This
 
-Planning a trip today means spending **hours juggling 5-6 platforms** — flight aggregators, hotel booking sites, weather apps, travel blogs, and review sites — then manually stitching everything into a coherent plan.
+Planning a trip today means spending **hours juggling 5-6 different platforms** — flight aggregators, hotel booking sites, weather apps, travel blogs, and review sites — and then manually stitching everything into a coherent plan.
 
 | Pain Point | Impact |
 |:-----------|:-------|
-| **Fragmented Research** | Travelers switch between 5+ platforms with no unified view |
-| **Time Drain** | Average trip planning takes 3-5 hours of manual research |
-| **No Intelligence** | Traditional tools list options but don't rank, analyze, or recommend |
-| **Weather Blindness** | Plans are made without considering weather conditions |
-| **No Personalization** | Static results that ignore traveler preferences |
+| **Fragmented Research** | Travelers switch between 5+ platforms with no unified view. |
+| **Time Drain** | Average trip planning takes 3-5 hours of manual research. |
+| **Weather Blindness** | Plans are made without considering the exact weather conditions. |
+| **No Intelligence** | Traditional tools list options but don't rank or summarize them. |
 
-**NavYatra AI solves this** by deploying 6 specialized AI agents that autonomously research, analyze, and synthesize a complete travel plan from a single sentence — in under 45 seconds.
-
----
-
-## ✨ What It Does
-
-> **Input**: *"Plan a 3-day trip from Delhi to Goa starting July 10, 2026 for 2 adults"*
->
-> **Output**: Analyzed flights with price comparisons, 6-7 hotel recommendations, weather-aware packing advice, curated attractions with insider tips, and a day-by-day itinerary — all in one go.
-
-| Agent | Capability |
-|:------|:-----------|
-| 🎯 **Coordinator** | Parses natural language into structured travel parameters |
-| ✈️ **Flight Intelligence** | Searches real flights via Amadeus, ranks best/cheapest/fastest |
-| 🏨 **Hotel Discovery** | Finds 6-7 accommodations with type, location advantage, and suitability |
-| 🌤️ **Weather Analysis** | Current conditions + 5-day forecast + packing recommendations |
-| 🔍 **Research Agent** | Discovers attractions, food guides, cultural tips, safety advice |
-| 📋 **Itinerary Planner** | Synthesizes everything into a weather-aware, day-by-day plan |
+**NavYatra AI solves this** by deploying 6 specialized AI agents that autonomously research, analyze, and synthesize a complete travel plan from a single sentence — all in under 45 seconds.
 
 ---
 
-## 🏗️ Architecture
+## ✨ How It Works (Multi-Agent Architecture)
 
-NavYatra AI uses a **multi-agent graph architecture** powered by LangGraph with parallel fan-out execution.
+NavYatra AI uses a **LangGraph-powered multi-agent architecture**. It intelligently routes queries to specialized agents, executes API calls in parallel, and formats everything beautifully.
 
+```mermaid
+flowchart TD
+    A([👤 User Types Prompt in UI]) --> B[🧠 Context-Aware LLM Router\nCoordinator Agent]
+    
+    B --> C{Parallel Execution}
+    
+    C --> D[✈️ Flight/Train API\nRapidAPI SkyScrapper/IRCTC]
+    C --> E[🏨 Hotel API\nRapidAPI Booking.com]
+    C --> F[🌤️ Weather API\nOpenWeatherMap]
+    C --> G[🎯 Attractions API\nSerpApi Google Local]
+    
+    D --> H[🤖 AI Formatting Engine\nCerebras 70B]
+    E --> H
+    F --> H
+    G --> H
+    
+    H --> I([📋 Final Structured Travel Plan\nRendered in Streamlit])
+    
+    classDef user fill:#06b6d4,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef router fill:#3b82f6,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef api fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff;
+    classDef ai fill:#6366f1,stroke:#fff,stroke-width:2px,color:#fff;
+    
+    class A,I user;
+    class B router;
+    class D,E,F,G api;
+    class H ai;
 ```
-                         ┌──────────────────┐
-                         │   STREAMLIT UI   │
-                         │  (Dark Theme)    │
-                         └────────┬─────────┘
-                                  │ HTTP POST /api/plan
-                                  ▼
-                         ┌──────────────────┐
-                         │  FASTAPI SERVER  │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │   COORDINATOR    │
-                         │  (Query Parser)  │
-                         └──┬───┬───┬───┬───┘
-                            │   │   │   │
-               ┌────────────┘   │   │   └────────────┐
-               ▼                ▼   ▼                ▼
-        ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐
-        │   FLIGHT   │  │   HOTEL    │  │  WEATHER   │  │  RESEARCH  │
-        │  (Amadeus) │  │ (Geoapify) │  │(OpenWeather│  │  (Tavily)  │
-        └─────┬──────┘  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘
-              │               │               │               │
-              └───────────────┴───────┬───────┴───────────────┘
-                                      ▼
-                             ┌──────────────────┐
-                             │    ITINERARY     │
-                             │   SYNTHESIZER    │
-                             └──────────────────┘
-```
-
-**Key**: The 4 domain agents run **in parallel** (LangGraph fan-out), reducing response time from ~3 minutes to **~35-45 seconds**.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & API Roles
 
-### AI & Orchestration
+### Core Tech Stack
+- **LangGraph & LangChain**: Orchestrates the multi-agent parallel execution.
+- **Cerebras (Llama 3.3 70B)**: Ultra-fast LLM inference engine.
+- **FastAPI**: Robust Python backend to stream server-sent events (SSE).
+- **Streamlit**: Beautiful, custom dark-themed UI frontend.
 
-| Technology | Role |
-|:-----------|:-----|
-| **LangGraph** | Multi-agent workflow with parallel fan-out/fan-in execution |
-| **LangChain** | LLM tool-calling, prompt engineering, and chain composition |
-| **Cerebras (Llama 3.3 70B)** | High-speed LLM inference — 1M tokens/day free tier |
-| **Pydantic** | Structured data validation for query parsing |
+### Live APIs Used
+We use 4 distinct APIs to fetch 100% real, live data.
 
-### Backend & Frontend
-
-| Technology | Role |
-|:-----------|:-----|
-| **FastAPI** | REST API with automatic OpenAPI docs |
-| **Streamlit** | Interactive web UI with custom obsidian-dark theme |
-| **SQLite** | Session persistence via LangGraph checkpointer |
-
-### External APIs
-
-| API | Provider | What It Returns |
-|:----|:---------|:----------------|
-| **Amadeus** | [developers.amadeus.com](https://developers.amadeus.com) | Flight routes, prices, airlines, timings |
-| **Geoapify** | [geoapify.com](https://www.geoapify.com) | Hotel names, addresses, types, coordinates |
-| **OpenWeather** | [openweathermap.org](https://openweathermap.org/api) | Temperature, humidity, wind, 5-day forecast |
-| **Tavily** | [tavily.com](https://tavily.com) | Tourist attractions, food guides, cultural tips |
-
-> **Note on APIs**: Amadeus and Geoapify are currently on **sandbox/test environments**. Migration to production endpoints is planned — this will unlock real-time booking data and global availability with no functional code changes required.
+| API Provider | What We Use It For | Data Fetched |
+|:-------------|:-------------------|:-------------|
+| **RapidAPI (Booking.com)** | Hotels | Exact hotel names, prices adjusted for adults/children, live review scores |
+| **RapidAPI (SkyScrapper)** | Flights | Real flight times, airlines, durations, and layovers |
+| **RapidAPI (IRCTC)** | Trains | Indian Railways train schedules, availability, and routing |
+| **OpenWeatherMap** | Weather | 5-day highly accurate forecasts (temp, wind, rain probability) |
+| **SerpApi** | Local Attractions | Live Google Maps data (ratings, reviews count, operating hours) |
 
 ---
 
-## 📂 Project Structure
+## 📊 Sample API Data
 
+<details>
+<summary><b>🏨 Click to see what the Hotel API returns (Sample JSON)</b></summary>
+
+```json
+{
+  "hotels": [
+    {
+      "name": "The Oberoi, New Delhi",
+      "price_per_night": 250.00,
+      "rating": 4.9,
+      "reviews": 1205,
+      "distance_to_center": "3 km",
+      "amenities": ["Pool", "Free WiFi", "Spa"]
+    }
+  ]
+}
 ```
-NavYatra-AI/
-├── agents/                  # AI Agent implementations
-│   ├── coordinator.py       # NL query → structured TravelQuery
-│   ├── flight_agent.py      # Flight search & analysis
-│   ├── hotel_agent.py       # Hotel discovery & ranking
-│   ├── weather_agent.py     # Weather analysis & packing advice
-│   ├── research_agent.py    # Attractions & cultural research
-│   ├── itinerary_agent.py   # Final itinerary synthesis
-│   └── llm_utils.py         # LLM factory, retry logic, rate limit handling
-│
-├── api/                     # External API clients
-│   ├── flights.py           # Amadeus API client
-│   ├── hotels.py            # Geoapify API client
-│   ├── weather.py           # OpenWeather API client
-│   └── research.py          # Tavily API client
-│
-├── graph/                   # LangGraph orchestration
-│   ├── state.py             # Shared state (TypedDict)
-│   └── workflow.py          # Graph builder + parallel execution
-│
-├── prompts/                 # Agent prompt templates
-│   └── templates.py         # All 6 agent system prompts
-│
-├── schemas/                 # Data models
-│   └── models.py            # TravelQuery Pydantic model
-│
-├── backend/                 # REST API
-│   └── main.py              # FastAPI app with /api/plan endpoint
-│
-├── frontend/                # Web UI
-│   └── app.py               # Streamlit app with premium dark theme
-│
-├── Dockerfile               # Docker container configuration
-├── .dockerignore            # Files excluded from Docker image
-├── start.sh                 # Startup script for Docker container
-├── .env.example             # Template for required API keys
-├── requirements.txt         # Python dependencies
-└── README.md
+</details>
+
+<details>
+<summary><b>🌤️ Click to see what the Weather API returns (Sample JSON)</b></summary>
+
+```json
+{
+  "forecast": [
+    {
+      "date": "2026-07-10",
+      "temperature": 28.5,
+      "feels_like": 30.2,
+      "condition": "Light Rain",
+      "humidity": 78,
+      "wind_speed": 4.5
+    }
+  ]
+}
 ```
+</details>
+
+<details>
+<summary><b>🎯 Click to see what the Local Attractions API returns (Sample JSON)</b></summary>
+
+```json
+{
+  "attractions": [
+    {
+      "title": "Hadimba Devi Temple",
+      "rating": 4.6,
+      "reviews": 49000,
+      "type": "Tourist attraction",
+      "operating_hours": "Closed · Opens 8 AM Tue"
+    }
+  ]
+}
+```
+</details>
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+- Python 3.12+
+- A `.env` file containing your API keys.
 
-- **Python 3.12+**
-- API keys for: **Cerebras**, **Amadeus**, **Geoapify**, **OpenWeather**, **Tavily**
-
-### Setup
-
+### 1. Clone & Install
 ```bash
-# 1. Clone
 git clone https://github.com/Satyam2006chh/NavYatra-AI.git
 cd NavYatra-AI
-
-# 2. Install dependencies
 pip install -r requirements.txt
+```
 
-# 3. Configure API keys
+### 2. Configure API Keys
+Copy the example environment file:
+```bash
 cp .env.example .env
-# Edit .env with your keys
-
-# 4. Start backend
-python -m uvicorn backend.main:app --reload --port 8000
-
-# 5. Start frontend (new terminal)
-streamlit run frontend/app.py --server.port 8501
-
-# 6. Open http://localhost:8501
 ```
+Inside `.env`, you will need to add your own keys (Do **NOT** commit this file):
+- `CEREBRAS_API_KEY`
+- `RAPIDAPI_KEY`
+- `OPENWEATHERMAP_API_KEY`
+- `SERPAPI_KEY`
 
-### Getting API Keys
-
-| API | Sign Up | Free Tier |
-|:----|:--------|:----------|
-| **Cerebras** | [cloud.cerebras.ai](https://cloud.cerebras.ai) | 1M tokens/day |
-| **Amadeus** | [developers.amadeus.com](https://developers.amadeus.com) | 500 calls/month |
-| **Geoapify** | [geoapify.com](https://www.geoapify.com) | 3,000 calls/day |
-| **OpenWeather** | [openweathermap.org](https://openweathermap.org/api) | 1,000 calls/day |
-| **Tavily** | [tavily.com](https://tavily.com) | 1,000 calls/month |
-
----
-
-## 🐳 Docker
-
-NavYatra AI is fully containerized with Docker. This means you can run the entire application — backend + frontend — inside a single container with one command. No need to install Python or any dependencies on your machine.
-
-### Prerequisites
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-- A `.env` file with your API keys (see [Getting API Keys](#getting-api-keys))
-
-### Build & Run
-
+### 3. Run the Backend
+Open a terminal and start the FastAPI server:
 ```bash
-# 1. Build the Docker image
-docker build -t navyatra-ai .
-
-# 2. Run the container
-docker run --env-file .env -p 8000:8000 -p 8501:8501 navyatra-ai
-
-# 3. Open in browser
-#    Frontend → http://localhost:8501
-#    Backend  → http://localhost:8000/api/health
+uvicorn backend.main:app --reload
 ```
 
-### Stop the Container
-
+### 4. Run the Frontend
+Open a **second** terminal and start the UI:
 ```bash
-# Press Ctrl+C in the terminal, or:
-docker ps                    # Find the container ID
-docker stop <container_id>   # Stop it
+streamlit run frontend/app.py
 ```
-
-### How It Works
-
-```
-┌─────────────────────────────────────────┐
-│           Docker Container              │
-│                                         │
-│   ┌─────────────┐  ┌────────────────┐   │
-│   │  FastAPI     │  │  Streamlit     │   │
-│   │  Backend     │  │  Frontend      │   │
-│   │  :8000       │  │  :8501         │   │
-│   └─────────────┘  └────────────────┘   │
-│                                         │
-│   Python 3.12 + All Dependencies        │
-└─────────────────────────────────────────┘
-```
-
-> **Why Docker?** It eliminates "works on my machine" problems. The same container runs identically on any machine — your laptop, a teammate's system, or a cloud server.
-
----
-
-## 📡 API Endpoints
-
-| Method | Endpoint | Description |
-|:-------|:---------|:------------|
-| `GET` | `/api/health` | Health check — returns `{"status": "healthy"}` |
-| `POST` | `/api/plan` | Generate a complete travel plan from a natural language query |
-
-**Example Request:**
-```json
-{
-  "query": "Plan a 3-day trip from Delhi to Goa starting July 10, 2026 for 2 adults"
-}
-```
-
----
-
-## 🗺️ Future Roadmap
-
-| Feature | Description | Status |
-|:--------|:------------|:-------|
-| **Production APIs** | Migrate Amadeus & Geoapify from sandbox to production for live booking data | 🔜 Planned |
-| **MCP Server Integration** | Model Context Protocol for direct flight and hotel booking within the AI interface | 🔜 Planned |
-| **Voice AI Agent** | Conversational voice interface to search and book flights hands-free | 📋 Designed |
-| **Android App** | Native mobile experience with on-the-go travel planning and offline itineraries | 📋 Designed |
-| **Multi-Destination Trips** | Support for complex multi-city itineraries with inter-city transport optimization | 💡 Ideation |
-| **Budget Optimizer** | AI-powered budget allocation across flights, hotels, food, and activities | 💡 Ideation |
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m 'Add your feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
+*Visit `http://localhost:8501` in your browser!*
 
 ---
 
 <div align="center">
-
-**Built by [Satyam Chhabra](https://github.com/Satyam2006chh)** · NavYatra AI — Your AI Travel Companion 🧭
-
+<b>Built by <a href="https://github.com/Satyam2006chh">Satyam Chhabra</a></b> · NavYatra AI — Your AI Travel Companion 🧭
 </div>

@@ -1,10 +1,3 @@
-"""
-LangGraph Workflow — NavYatra AI
-Defines the multi-agent graph with parallel execution and SQLite checkpointer.
-
-Graph Flow:
-  START → coordinator → [flight, hotel, weather, research] (parallel) → itinerary → END
-"""
 
 import os
 import sys
@@ -16,19 +9,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from langgraph.graph import StateGraph, START, END
 from graph.state import TravelPlanState
 from agents.coordinator import parse_user_query
-from agents.flight_agent import run_flight_agent
-from agents.hotel_agent import run_hotel_agent
-from agents.weather_agent import run_weather_agent
-from agents.research_agent import run_research_agent
 from agents.itinerary_agent import generate_itinerary
+from api.flights import FlightClient
+from api.hotels import HotelClient
+from api.weather import WeatherClient
+from api.research import ResearchClient
+from api.trains import TrainClient
+from agents.llm_utils import get_llm, invoke_with_retry
+from langchain_core.messages import SystemMessage, HumanMessage
 
-# Checkpointer setup
 try:
     from langgraph.checkpoint.sqlite import SqliteSaver
     DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "navyatra.db")
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     checkpointer = SqliteSaver(conn)
-    print("✅ Using SQLite checkpointer for persistence")
+    print("[OK] Using SQLite checkpointer for persistence")
 except ImportError:
     from langgraph.checkpoint.memory import MemorySaver
     checkpointer = MemorySaver()
@@ -36,11 +31,9 @@ except ImportError:
 
 
 # ============================================================
-# GRAPH NODES — No delays! Cerebras has 1M TPD.
 # ============================================================
 
 def coordinator_node(state: TravelPlanState) -> dict:
-    """Node 1: Parse user query into structured travel data."""
     print("\n🎯 [Coordinator] Parsing user query...")
     parsed = parse_user_query(state["user_query"])
     print(f"✅ [Coordinator] Parsed: {parsed}")
@@ -48,74 +41,94 @@ def coordinator_node(state: TravelPlanState) -> dict:
 
 
 def flight_node(state: TravelPlanState) -> dict:
-    """Node 2: Search and analyze flights (runs in parallel)."""
-    print("✈️  [Flight Agent] Searching flights...")
     p = state["parsed_input"]
+    fc = FlightClient()
+    raw_data = fc.search(p['origin_airport'], p['destination_airport'], p['departure_date'], p.get('num_days', 3), int(p.get('adults', 1)), p.get('currency', 'INR'))
+    
+    llm = get_llm(temperature=0.3)
+    from prompts.templates import FLIGHT_AGENT_SYSTEM_PROMPT
+    msg = [
+        SystemMessage(content=FLIGHT_AGENT_SYSTEM_PROMPT),
+        HumanMessage(content=json.dumps(raw_data))
+    ]
+    summary = invoke_with_retry(llm, msg).content
+    return {"flight_results": summary, "raw_flight_results": raw_data}
 
-    result = run_flight_agent(
-        f"Search flights from {p['origin_city']} to {p['destination_city']} "
-        f"on {p['departure_date']} for {p['adults']} adult(s) in {p['currency']}."
-    )
 
-    print("✅ [Flight Agent] Done")
-    return {"flight_results": result}
+def train_node(state: TravelPlanState) -> dict:
+    p = state["parsed_input"]
+    tc = TrainClient()
+    raw_data = tc.search(p.get('origin_station_code', ''), p.get('destination_station_code', ''), p['departure_date'], p.get('num_days', 3))
+    
+    llm = get_llm(temperature=0.3)
+    from prompts.templates import TRAIN_AGENT_SYSTEM_PROMPT
+    msg = [
+        SystemMessage(content=TRAIN_AGENT_SYSTEM_PROMPT),
+        HumanMessage(content=json.dumps(raw_data))
+    ]
+    summary = invoke_with_retry(llm, msg).content
+    return {"train_results": summary, "raw_train_results": raw_data}
 
 
 def hotel_node(state: TravelPlanState) -> dict:
-    """Node 3: Search and analyze hotels (runs in parallel)."""
-    print("🏨 [Hotel Agent] Searching hotels...")
     p = state["parsed_input"]
-
-    input_text = (
-        f"Find hotels in {p['destination_city']}. "
-        f"The traveler is coming from {p['origin_city']} for {p.get('num_days', 3)} days."
-    )
-    if p.get("preferences"):
-        input_text += f" Preferences: {p['preferences']}"
-
-    result = run_hotel_agent(input_text)
-    print("✅ [Hotel Agent] Done")
-    return {"hotel_results": result}
+    import datetime
+    try:
+        checkin = datetime.datetime.strptime(p['departure_date'], "%Y-%m-%d")
+        checkout = checkin + datetime.timedelta(days=p.get('num_days', 3))
+        checkout_date = checkout.strftime("%Y-%m-%d")
+    except:
+        checkout_date = p['departure_date']
+        
+    hc = HotelClient()
+    raw_data = hc.search(p['destination_city'], p['departure_date'], checkout_date, p.get('adults', 1), p.get('children', 0), 7, p.get('currency', 'INR'))
+    
+    llm = get_llm(temperature=0.3)
+    from prompts.templates import HOTEL_AGENT_SYSTEM_PROMPT
+    msg = [
+        SystemMessage(content=HOTEL_AGENT_SYSTEM_PROMPT),
+        HumanMessage(content=json.dumps(raw_data))
+    ]
+    summary = invoke_with_retry(llm, msg).content
+    return {"hotel_results": summary, "raw_hotel_results": raw_data}
 
 
 def weather_node(state: TravelPlanState) -> dict:
-    """Node 4: Analyze weather conditions (runs in parallel)."""
-    print("🌤️  [Weather Agent] Checking weather...")
     p = state["parsed_input"]
-
-    result = run_weather_agent(
-        f"Check the weather in {p['destination_city']} for a trip "
-        f"starting {p['departure_date']} for {p.get('num_days', 3)} days."
-    )
-
-    print("✅ [Weather Agent] Done")
-    return {"weather_results": result}
+    wc = WeatherClient()
+    raw_data = wc.search(p['destination_city'], p['departure_date'], p.get('num_days', 3))
+    
+    llm = get_llm(temperature=0.3)
+    from prompts.templates import WEATHER_AGENT_SYSTEM_PROMPT
+    msg = [
+        SystemMessage(content=WEATHER_AGENT_SYSTEM_PROMPT),
+        HumanMessage(content=json.dumps(raw_data))
+    ]
+    summary = invoke_with_retry(llm, msg).content
+    return {"weather_results": summary, "raw_weather_results": raw_data}
 
 
 def research_node(state: TravelPlanState) -> dict:
-    """Node 5: Research attractions and local tips (runs in parallel)."""
-    print("🎯 [Research Agent] Researching destination...")
     p = state["parsed_input"]
-
-    input_text = (
-        f"Research the best tourist attractions, food, culture, and travel tips "
-        f"for {p['destination_city']}."
-    )
-    if p.get("preferences"):
-        input_text += f" The traveler is interested in: {p['preferences']}"
-
-    result = run_research_agent(input_text)
-    print("✅ [Research Agent] Done")
-    return {"research_results": result}
+    rc = ResearchClient()
+    raw_data = rc.search(f"Best tourist attractions in {p['destination_city']}", 7)
+    
+    llm = get_llm(temperature=0.3)
+    from prompts.templates import RESEARCH_AGENT_SYSTEM_PROMPT
+    msg = [
+        SystemMessage(content=RESEARCH_AGENT_SYSTEM_PROMPT),
+        HumanMessage(content=json.dumps(raw_data))
+    ]
+    summary = invoke_with_retry(llm, msg).content
+    return {"research_results": summary, "raw_research_results": raw_data}
 
 
 def itinerary_node(state: TravelPlanState) -> dict:
-    """Node 6: Synthesize everything into a final travel plan."""
     print("📋 [Itinerary Agent] Generating final travel plan...")
     p = state["parsed_input"]
 
     itinerary = generate_itinerary(
-        flight_results=state.get("flight_results", "No flight data available"),
+        flight_results=state.get("flight_results", "") + "\n" + state.get("train_results", ""),
         hotel_results=state.get("hotel_results", "No hotel data available"),
         weather_results=state.get("weather_results", "No weather data available"),
         research_results=state.get("research_results", "No research data available"),
@@ -127,31 +140,31 @@ def itinerary_node(state: TravelPlanState) -> dict:
 
 
 # ============================================================
-# BUILD THE GRAPH — Parallel fan-out for 4 middle agents
 # ============================================================
 
 def build_graph():
-    """Build and compile the LangGraph workflow with parallel execution."""
     builder = StateGraph(TravelPlanState)
 
     builder.add_node("coordinator", coordinator_node)
     builder.add_node("flight_agent", flight_node)
+    builder.add_node("train_agent", train_node)
     builder.add_node("hotel_agent", hotel_node)
     builder.add_node("weather_agent", weather_node)
     builder.add_node("research_agent", research_node)
     builder.add_node("itinerary_agent", itinerary_node)
 
-    # Coordinator runs first
     builder.add_edge(START, "coordinator")
 
-    # Fan-out: coordinator → all 4 agents run in PARALLEL
-    builder.add_edge("coordinator", "flight_agent")
-    builder.add_edge("coordinator", "hotel_agent")
-    builder.add_edge("coordinator", "weather_agent")
-    builder.add_edge("coordinator", "research_agent")
+    def route_transport(state: TravelPlanState):
+        pref = state["parsed_input"].get("preferred_transport", "flight").lower()
+        if pref == "train":
+            return ["train_agent", "hotel_agent", "weather_agent", "research_agent"]
+        return ["flight_agent", "hotel_agent", "weather_agent", "research_agent"]
 
-    # Fan-in: all 4 agents → itinerary (waits for all to complete)
+    builder.add_conditional_edges("coordinator", route_transport, ["flight_agent", "train_agent", "hotel_agent", "weather_agent", "research_agent"])
+
     builder.add_edge("flight_agent", "itinerary_agent")
+    builder.add_edge("train_agent", "itinerary_agent")
     builder.add_edge("hotel_agent", "itinerary_agent")
     builder.add_edge("weather_agent", "itinerary_agent")
     builder.add_edge("research_agent", "itinerary_agent")
@@ -163,42 +176,103 @@ def build_graph():
 
 
 # ============================================================
-# RUN THE GRAPH
 # ============================================================
 
 def run_travel_plan(user_query: str, thread_id: str = None) -> dict:
-    """Execute the full travel planning workflow."""
     graph = build_graph()
-
     if not thread_id:
         thread_id = str(uuid.uuid4())
-
     config = {"configurable": {"thread_id": thread_id}}
-
     initial_state = {
         "user_query": user_query,
         "parsed_input": {},
         "flight_results": "",
+        "train_results": "",
         "hotel_results": "",
         "weather_results": "",
         "research_results": "",
+        "raw_flight_results": {},
+        "raw_train_results": {},
+        "raw_hotel_results": {},
+        "raw_weather_results": {},
+        "raw_research_results": {},
         "itinerary": ""
     }
-
-    print(f"\n{'='*60}")
-    print(f"🧭 NAVYATRA AI — Starting Travel Plan (Parallel Mode)")
-    print(f"📝 Query: {user_query}")
-    print(f"🧵 Thread: {thread_id}")
-    print(f"{'='*60}\n")
-
     result = graph.invoke(initial_state, config=config)
-
     return {
         "thread_id": thread_id,
         "parsed_input": result.get("parsed_input", {}),
         "flight_results": result.get("flight_results", ""),
+        "train_results": result.get("train_results", ""),
         "hotel_results": result.get("hotel_results", ""),
         "weather_results": result.get("weather_results", ""),
         "research_results": result.get("research_results", ""),
+        "raw_flight_results": result.get("raw_flight_results", {}),
+        "raw_train_results": result.get("raw_train_results", {}),
+        "raw_hotel_results": result.get("raw_hotel_results", {}),
+        "raw_weather_results": result.get("raw_weather_results", {}),
+        "raw_research_results": result.get("raw_research_results", {}),
         "itinerary": result.get("itinerary", "")
+    }
+
+import json
+
+def run_travel_plan_stream(user_query: str, thread_id: str = None):
+    graph = build_graph()
+    if not thread_id:
+        thread_id = str(uuid.uuid4())
+    config = {"configurable": {"thread_id": thread_id}}
+    initial_state = {
+        "user_query": user_query,
+        "parsed_input": {},
+        "flight_results": "",
+        "train_results": "",
+        "hotel_results": "",
+        "weather_results": "",
+        "research_results": "",
+        "raw_flight_results": {},
+        "raw_train_results": {},
+        "raw_hotel_results": {},
+        "raw_weather_results": {},
+        "raw_research_results": {},
+        "itinerary": ""
+    }
+    
+    yield {"agent": "system", "status": "Initializing workflow..."}
+    
+    final_state = initial_state.copy()
+    for update in graph.stream(initial_state, config=config, stream_mode="updates"):
+        for node_name, state_update in update.items():
+            final_state.update(state_update)
+            if node_name == "coordinator":
+                yield {"agent": "coordinator", "status": "Parsed user query", "data": state_update.get("parsed_input")}
+            elif node_name == "flight_agent":
+                yield {"agent": "flight_agent", "status": "Flight search complete"}
+            elif node_name == "train_agent":
+                yield {"agent": "train_agent", "status": "Train search complete"}
+            elif node_name == "hotel_agent":
+                yield {"agent": "hotel_agent", "status": "Hotel search complete"}
+            elif node_name == "weather_agent":
+                yield {"agent": "weather_agent", "status": "Weather analysis complete"}
+            elif node_name == "research_agent":
+                yield {"agent": "research_agent", "status": "Attractions research complete"}
+            elif node_name == "itinerary_agent":
+                yield {"agent": "itinerary_agent", "status": "Final itinerary generated!"}
+
+    yield {
+        "agent": "complete",
+        "status": "All tasks finished",
+        "thread_id": thread_id,
+        "parsed_input": final_state.get("parsed_input", {}),
+        "flight_results": final_state.get("flight_results", ""),
+        "train_results": final_state.get("train_results", ""),
+        "hotel_results": final_state.get("hotel_results", ""),
+        "weather_results": final_state.get("weather_results", ""),
+        "research_results": final_state.get("research_results", ""),
+        "raw_flight_results": final_state.get("raw_flight_results", {}),
+        "raw_train_results": final_state.get("raw_train_results", {}),
+        "raw_hotel_results": final_state.get("raw_hotel_results", {}),
+        "raw_weather_results": final_state.get("raw_weather_results", {}),
+        "raw_research_results": final_state.get("raw_research_results", {}),
+        "itinerary": final_state.get("itinerary", "")
     }
