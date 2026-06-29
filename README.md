@@ -113,6 +113,46 @@ We use 4 distinct APIs to fetch 100% real, live data.
 </details>
 
 <details>
+<summary><b>✈️ Click to see what the Flight API returns (Sample JSON)</b></summary>
+
+```json
+{
+  "flights": [
+    {
+      "airline": "IndiGo",
+      "flight_number": "6E-2051",
+      "departure": "08:30 AM (DEL)",
+      "arrival": "11:15 AM (GOI)",
+      "duration": "2h 45m",
+      "price": 125.50,
+      "stops": "Direct"
+    }
+  ]
+}
+```
+</details>
+
+<details>
+<summary><b>🚆 Click to see what the Train API returns (Sample JSON)</b></summary>
+
+```json
+{
+  "trains": [
+    {
+      "train_name": "Vande Bharat Exp",
+      "train_number": "22439",
+      "departure_time": "06:00 AM (NDLS)",
+      "arrival_time": "02:00 PM (SVDK)",
+      "duration": "8h 00m",
+      "classes_available": ["CC", "EC"],
+      "running_days": ["Mon", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    }
+  ]
+}
+```
+</details>
+
+<details>
 <summary><b>🌤️ Click to see what the Weather API returns (Sample JSON)</b></summary>
 
 ```json
